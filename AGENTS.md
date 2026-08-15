@@ -12,22 +12,22 @@ Before making changes, read the rules relevant to the task.
 
 Always follow:
 
-* [`rules/clean-code.md`](rules/clean-code.md)
-* [`rules/file-naming.md`](rules/file-naming.md)
-* [`rules/git.md`](rules/git.md)
+* [`.agents/rules/clean-code.md`](.agents/rules/clean-code.md)
+* [`.agents/rules/file-naming.md`](.agents/rules/file-naming.md)
+* [`.agents/rules/git.md`](.agents/rules/git.md)
 
 Apply additional rules based on the files and technologies involved:
 
-* Markdown: [`rules/markdown.md`](rules/markdown.md)
-* Python: [`rules/python-general.md`](rules/python-general.md)
-* Python packaging: [`rules/python-packaging.md`](rules/python-packaging.md)
-* Python tooling and dependencies: [`rules/python-uv.md`](rules/python-uv.md)
-* TypeScript: [`rules/typescript.md`](rules/typescript.md)
-* Bun: [`rules/typescript-bun.md`](rules/typescript-bun.md)
-* React: [`rules/react.md`](rules/react.md)
-* Next.js: [`rules/next-js.md`](rules/next-js.md)
-* Astro: [`rules/astro.md`](rules/astro.md)
-* Research-related tasks only: [`rules/research.md`](rules/research.md)
+* Markdown: [`.agents/rules/markdown.md`](.agents/rules/markdown.md)
+* Python: [`.agents/rules/python-general.md`](.agents/rules/python-general.md)
+* Python packaging: [`.agents/rules/python-packaging.md`](.agents/rules/python-packaging.md)
+* Python tooling and dependencies: [`.agents/rules/python-uv.md`](.agents/rules/python-uv.md)
+* TypeScript: [`.agents/rules/typescript.md`](.agents/rules/typescript.md)
+* Bun: [`.agents/rules/typescript-bun.md`](.agents/rules/typescript-bun.md)
+* React: [`.agents/rules/react.md`](.agents/rules/react.md)
+* Next.js: [`.agents/rules/next-js.md`](.agents/rules/next-js.md)
+* Astro: [`.agents/rules/astro.md`](.agents/rules/astro.md)
+* Research-related tasks only: [`.agents/rules/research.md`](.agents/rules/research.md)
 
 Multiple rule files may apply to the same change. Follow all applicable rules.
 
