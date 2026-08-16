@@ -101,6 +101,57 @@ def submit_flag(
 
 Place broadly used domain types in `types.py`. Keep narrowly scoped types close to their use.
 
+## Generics
+
+Declare type parameters with the `[]` syntax. Do not import `Generic` or `TypeVar` to write new generic code.
+
+```python
+# Bad
+from typing import Generic, TypeVar
+
+FlagT = TypeVar("FlagT")
+
+
+class FlagBuffer(Generic[FlagT]):
+    def latest(self) -> FlagT: ...
+
+
+def first(items: Sequence[FlagT]) -> FlagT: ...
+
+
+# Good
+class FlagBuffer[FlagT]:
+    def latest(self) -> FlagT: ...
+
+
+def first[FlagT](items: Sequence[FlagT]) -> FlagT: ...
+```
+
+Express bounds and constraints inline.
+
+```python
+class Scoreboard[RoundNumberT: int]: ...
+
+
+def parse[ValueT: (str, bytes)](raw_value: ValueT) -> ValueT: ...
+```
+
+Use `[**P]` for parameter specifications and `[*Ts]` for variadic type parameters instead of importing `ParamSpec` and `TypeVarTuple`.
+
+Declare type aliases with the `type` statement.
+
+```python
+# Bad
+SubmissionResults = dict[TeamIdentifier, tuple[FlagValue]]
+
+# Good
+type SubmissionResults = dict[TeamIdentifier, tuple[FlagValue]]
+```
+
+Use `typing.Self` for methods that return an instance of their own class. Do not introduce a type parameter bound to the enclosing class for that purpose.
+
+This syntax requires Python 3.12. When the project targets an earlier version, follow its existing `TypeVar` and `Generic` usage rather than raising the required version.
+
 ## Built-in Type Subclassing
 
 Prefer subclassing Python's built-in types, such as `list`, `set`, `frozenset`, `dict`, `tuple`, and `str`, when a domain type fundamentally has the same behavior as that built-in type.
@@ -299,6 +350,7 @@ Before completing Python changes, verify that:
 - domain types that behave like built-in types inherit from those types, especially for collections
 - structured data models prefer Pydantic
 - closed sets of allowed values prefer `Literal` types
+- generic code uses the `[]` type parameter syntax instead of `Generic` and `TypeVar`
 - tuple type annotations do not include an ellipsis
 - `Any` and type suppressions are avoided
 - failures use explicit exceptions
