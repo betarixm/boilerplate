@@ -27,6 +27,7 @@ Apply additional rules based on the files and technologies involved:
 * React: [`.agents/rules/react.md`](.agents/rules/react.md)
 * Next.js: [`.agents/rules/next-js.md`](.agents/rules/next-js.md)
 * Astro: [`.agents/rules/astro.md`](.agents/rules/astro.md)
+* Databases in web applications: [`.agents/rules/database.md`](.agents/rules/database.md)
 * Research-related tasks only: [`.agents/rules/research.md`](.agents/rules/research.md)
 
 Multiple rule files may apply to the same change. Follow all applicable rules.
