@@ -22,6 +22,7 @@ Apply additional rules based on the files and technologies involved:
 * Python: [`.agents/rules/python-general.md`](.agents/rules/python-general.md)
 * Python packaging: [`.agents/rules/python-packaging.md`](.agents/rules/python-packaging.md)
 * Python tooling and dependencies: [`.agents/rules/python-uv.md`](.agents/rules/python-uv.md)
+* Django: [`.agents/rules/django.md`](.agents/rules/django.md)
 * TypeScript: [`.agents/rules/typescript.md`](.agents/rules/typescript.md)
 * Bun: [`.agents/rules/typescript-bun.md`](.agents/rules/typescript-bun.md)
 * React: [`.agents/rules/react.md`](.agents/rules/react.md)
