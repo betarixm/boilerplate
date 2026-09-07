@@ -5,8 +5,17 @@
 Use `uv` for Python project initialization and dependency management.
 
 ```bash
-uv init .
+uv init --bare .
 uv add --dev pyright ruff
+```
+
+Use `--bare` when initializing the workspace root so that `uv` does not scaffold its default `src/` layout.
+
+When initializing a packaged workspace member, do not retain a generated `src/` directory. Use the flat package layout required by the Python packaging rules and configure the selected build backend accordingly. For `uv_build`, set:
+
+```toml
+[tool.uv.build-backend]
+module-root = ""
 ```
 
 Configure `pyright` in `pyproject.toml`:

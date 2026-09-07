@@ -5,6 +5,8 @@
 * Every Python package MUST be a member of the `uv` workspace.
 * Configure each package's build settings so that workspace dependencies are installed and importable correctly.
 * All Python packages MUST live under `packages/`.
+* Python packages MUST use a flat layout. Place each import package directly under its workspace member directory.
+* Do not create or retain a `src/` directory for Python packages.
 * All Python tests MUST live under the project-root `tests/` directory.
 * Prefer registering all workspace packages as root development dependencies to maintain a single shared `.venv`.
 
@@ -22,6 +24,15 @@ Example:
         └── pyproject.toml
 └── tests/
 ```
+
+When a package uses the `uv_build` backend, configure the flat layout explicitly:
+
+```toml
+[tool.uv.build-backend]
+module-root = ""
+```
+
+Scaffolding defaults do not override this layout. If a project initializer creates `src/<import-package>/`, move the import package to the workspace member directory and remove `src/`.
 
 ## Library Packages
 
