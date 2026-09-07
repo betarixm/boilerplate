@@ -4,7 +4,8 @@
 
 These instructions apply to the entire repository.
 
-If a deeper directory contains its own `AGENTS.md`, follow the more specific instructions for files within that directory.
+If a deeper directory contains its own `AGENTS.md`, follow the more specific
+instructions for files within that directory.
 
 ## Rules
 
@@ -37,14 +38,20 @@ When rules conflict, prefer the more specific rule over the more general rule.
 
 ## Existing Projects
 
-Respect the existing architecture, tooling, and conventions of the project being modified.
+Respect the existing architecture, tooling, and conventions of the project
+being modified.
 
-Do not introduce a new framework, package manager, formatter, linter, test runner, or architectural pattern solely to conform to these boilerplate preferences when the existing project has an established alternative.
+Do not introduce a new framework, package manager, formatter, linter, test
+runner, or architectural pattern solely to conform to these boilerplate
+preferences when the existing project has an established alternative.
 
-Prefer incremental changes over unrelated refactoring.
+Prefer incremental changes over unrelated refactoring. When a small patch would
+add case-specific exceptions or duplicate a policy, make the smallest in-scope
+change that restores a coherent invariant-based design instead.
 
 ## Verification
 
-After making changes, run the relevant formatter, linter, type checker, tests, and build commands defined by the project.
+After making changes, run the relevant formatter, linter, type checker, tests,
+and build commands defined by the project.
 
 Do not consider a change complete while known relevant checks are failing.
