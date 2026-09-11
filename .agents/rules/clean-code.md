@@ -83,6 +83,18 @@ from global state or service locators.
 Do not use primitive values as substitutes for distinct domain concepts when
 the language provides a practical way to distinguish them.
 
+## Construction
+
+Keep constructors minimal: assign prepared properties and dependencies, and
+perform only simple checks needed to establish valid instance state.
+
+Move complex preparation, registration, parsing, and external I/O into named
+factory methods on the class. Have each factory prepare the required values
+and return a fully initialized instance through the minimal constructor.
+
+Do not hide complex setup in helpers called by the constructor or require a
+separate initialization call after construction.
+
 ## Error Handling
 
 Represent failures explicitly.
@@ -173,6 +185,7 @@ Before completing a change, verify that:
 * unnecessary abbreviations are absent
 * numbered or vague names are absent
 * dependencies and side effects are explicit
+* constructors are minimal, with complex creation logic in named factories
 * failures are represented explicitly
 * internal invariants are asserted where useful
 * unnecessary mutation and reassignment are absent
