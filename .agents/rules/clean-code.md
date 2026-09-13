@@ -106,8 +106,10 @@ domain.
 Errors should identify what failed and include enough context to diagnose the
 problem.
 
-Preserve the original cause when translating low-level failures into
-domain-specific errors.
+Let errors from called operations propagate naturally. Do not catch an error
+to rethrow it or wrap it in another error.
+
+Do not add error handlers merely because a call may fail.
 
 Never include secrets, credentials, tokens, flags, cookies, or other sensitive
 values in logs or error messages.
@@ -187,6 +189,7 @@ Before completing a change, verify that:
 * dependencies and side effects are explicit
 * constructors are minimal, with complex creation logic in named factories
 * failures are represented explicitly
+* errors from called operations propagate without catch-and-rethrow wrappers
 * internal invariants are asserted where useful
 * unnecessary mutation and reassignment are absent
 * secrets cannot appear in logs or errors

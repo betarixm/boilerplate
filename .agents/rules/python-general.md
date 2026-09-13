@@ -246,15 +246,30 @@ def load_submission_token() -> SubmissionToken:
     )
 ```
 
-Preserve exception chains when translating failures.
+Follow the [clean code error handling rules](clean-code.md#error-handling).
+
+Let exceptions from calls propagate naturally. Do not add `try`/`except`
+merely because a call may raise, or catch an exception to raise it again with
+`raise` or `raise exception`. Do not wrap it in another exception with
+`raise ... from exception` either.
 
 ```python
+# Bad
+try:
+    response = http_client.send(submission_request)
+except TimeoutError:
+    raise
+
+# Bad
 try:
     response = http_client.send(submission_request)
 except TimeoutError as timeout_error:
     raise FlagSubmissionTimeoutError(
         "Flag submission request timed out"
     ) from timeout_error
+
+# Good
+response = http_client.send(submission_request)
 ```
 
 Exception messages should contain diagnostic context but MUST NOT contain
@@ -400,9 +415,6 @@ Specify timeouts for network operations.
 Do not hardcode production secrets or include sensitive values in logs,
 exception messages, serialized diagnostics, or debug output.
 
-Translate infrastructure failures into domain-specific errors when doing so
-makes the caller's responsibility clearer.
-
 ## Imports and Boundaries
 
 Do not import another application's internal implementation directly.
@@ -436,7 +448,7 @@ Before completing Python changes, verify that:
 - tuple type annotations do not include an ellipsis
 - `Any` and type suppressions are avoided
 - failures use explicit exceptions
-- exception chaining is preserved
+- exceptions from calls propagate without catch-and-raise wrappers
 - assertions cover useful internal invariants
 - unnecessary reassignment and mutation are absent
 - acquired resources and temporary state changes are wrapped in `with`
