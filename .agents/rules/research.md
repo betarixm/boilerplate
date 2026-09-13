@@ -2,23 +2,30 @@
 
 ## Purpose
 
-Each research episode should represent a self-contained, reproducible experiment.
+Each research episode should represent a self-contained, reproducible
+experiment.
 
-An episode must contain enough information, configuration, implementation, and outputs for another researcher or LLM agent to understand and reproduce the experiment without relying on undocumented context.
+An episode must contain enough information, configuration, implementation, and
+outputs for another researcher or LLM agent to understand and reproduce the
+experiment without relying on undocumented context.
 
 ## Episode Directory
 
 Store experiments under the `episodes/` directory.
 
-Each episode directory must begin with its creation date in `YYYY-MM-DD` format, followed by a short descriptive name.
+Each episode directory must begin with its creation date in `YYYY-MM-DD` format,
+followed by a short descriptive name.
 
 ```text
 episodes/2026-08-03-memory-retrieval/
 ```
 
-Use one episode for one coherent research question or experimental investigation.
+Use one episode for one coherent research question or experimental
+investigation.
 
-If an episode contains multiple related experimental variants, represent them as **subepisodes** within the same episode rather than creating unrelated directory structures.
+If an episode contains multiple related experimental variants, represent them as
+**subepisodes** within the same episode rather than creating unrelated directory
+structures.
 
 ## Required Structure
 
@@ -35,7 +42,8 @@ episodes/<YYYY-MM-DD>-<episode-name>/
 └── REPORT.md
 ```
 
-Multiple configuration files and artifact directories may exist when the episode contains multiple subepisodes.
+Multiple configuration files and artifact directories may exist when the episode
+contains multiple subepisodes.
 
 ## `README.md`
 
@@ -64,11 +72,13 @@ description: ...
 
 Keep the frontmatter concise and informative.
 
-The frontmatter should be sufficient for quickly determining what an episode contains without reading the entire document.
+The frontmatter should be sufficient for quickly determining what an episode
+contains without reading the entire document.
 
 ## Subepisodes
 
-Use subepisodes when multiple experiment configurations investigate the same overall research question.
+Use subepisodes when multiple experiment configurations investigate the same
+overall research question.
 
 Each subepisode must have a descriptive name.
 
@@ -84,7 +94,8 @@ artifact-long-context/
 artifact-short-context/
 ```
 
-The same subepisode name should be used consistently across configuration files, generated artifacts, reports, and other references.
+The same subepisode name should be used consistently across configuration files,
+generated artifacts, reports, and other references.
 
 Avoid names based only on sequence numbers such as:
 
@@ -99,9 +110,11 @@ Prefer names that communicate the experimental distinction.
 
 Each subepisode must have an explicit configuration file.
 
-The configuration file is the **authoritative source of runtime configuration** for that experiment.
+The configuration file is the **authoritative source of runtime configuration**
+for that experiment.
 
-Any parameter or choice that can materially affect experimental behavior must be declared explicitly in the configuration.
+Any parameter or choice that can materially affect experimental behavior must be
+declared explicitly in the configuration.
 
 Examples include:
 
@@ -116,7 +129,10 @@ Examples include:
 - feature flags
 - external service options
 
-Do not distribute experiment configuration across command-line arguments, environment variables, implicit defaults, or machine-specific state.
+Keep experiment settings in the YAML configuration. Do not introduce additional
+configuration sources through command-line options, direct environment access,
+implicit defaults, or machine-specific state. The required `experiment_tag`
+argument only selects the configuration file.
 
 The intended execution model is:
 
@@ -128,7 +144,37 @@ configuration-<subepisode>.yaml
 artifact-<subepisode>/
 ```
 
-Exceptions are acceptable only when an external system requires a specific interface and changing it would break compatibility.
+Exceptions are acceptable only when an external system requires a specific
+interface and changing it would break compatibility.
+
+### Secrets and Credentials
+
+Declare references to secrets, including API keys and authentication credentials,
+in `configuration-<subepisode>.yaml` using OmegaConf resolvers. Keep the actual
+secret values outside source code and version-controlled configuration files.
+
+For secrets supplied through the process environment, use the built-in
+[`oc.env` resolver][omegaconf-environment-resolver]:
+
+```yaml
+api_key: ${oc.env:EXPERIMENT_API_KEY}
+```
+
+Supply the referenced environment variables before launching the episode. Episode
+code must not load `.env` files, call `load_dotenv()`, or read credentials directly
+through `os.getenv()` or `os.environ`.
+
+Resolve these references with `OmegaConf.to_container(..., resolve=True)` at the
+entry point, validate the result with `Configuration`, and pass credentials
+explicitly from that configuration to clients. Do not rely on clients implicitly
+discovering credentials from the environment.
+
+Do not provide fallback values for required secrets; a missing secret must fail
+configuration loading. Document the required environment variable names in the
+episode's `README.md` without recording their values. Never log or save resolved
+secrets, including in configuration snapshots, artifacts, or reports.
+
+[omegaconf-environment-resolver]: https://omegaconf.readthedocs.io/en/latest/custom_resolvers.html#oc-env
 
 ## `__main__.py`
 
@@ -138,11 +184,79 @@ It should:
 
 1. explicitly load the selected subepisode configuration,
 2. execute the experiment,
-3. write experimental outputs into the corresponding `artifact-<subepisode>/` directory.
+3. write experimental outputs into the corresponding `artifact-<subepisode>/`
+   directory.
 
-Running the experiment from the same source code and configuration should reproduce the same experimental behavior as closely as the underlying systems permit.
+Running the experiment from the same source code and configuration should
+reproduce the same experimental behavior as closely as the underlying systems
+permit.
 
-Do not place analysis or visualization logic in `__main__.py` unless it is an essential part of producing the raw experimental artifact.
+Do not place analysis or visualization logic in `__main__.py` unless it is an
+essential part of producing the raw experimental artifact.
+
+Use the following entry-point pattern. The required `experiment_tag` argument
+selects the subepisode. Load its configuration with
+OmegaConf, resolve interpolations, and validate it once with Pydantic before
+passing it to the experiment.
+
+Acquire a non-blocking exclusive lock for the selected tag before running the
+experiment. After acquiring the lock, use `try`/`finally` to remove the lock file
+when the experiment returns or raises. Keep lock acquisition outside the `try`
+block so a process that fails to acquire the lock does not remove another
+process's lock file. The file context manager closes the file and releases the
+lock. This pattern requires a platform that supports `fcntl`.
+
+```python
+import asyncio
+from pathlib import Path
+from typing import Final
+
+from pydantic import BaseModel
+
+EPISODE_DIRECTORY: Final = Path(__file__).resolve().parent
+EXPERIMENT_NAME: Final = EPISODE_DIRECTORY.name
+
+
+class Configuration(BaseModel): ...
+
+
+async def main(
+    experiment_name: str,
+    experiment_tag: str,
+    configuration: Configuration,
+) -> None: ...
+
+
+if __name__ == "__main__":
+    import argparse
+    import fcntl
+
+    from omegaconf import OmegaConf
+
+    argument_parser = argparse.ArgumentParser()
+    argument_parser.add_argument("experiment_tag")
+    experiment_tag = str(argument_parser.parse_args().experiment_tag)
+    raw_configuration = OmegaConf.to_container(
+        OmegaConf.load(EPISODE_DIRECTORY / f"configuration-{experiment_tag}.yaml"),
+        resolve=True,
+    )
+    configuration = Configuration.model_validate(raw_configuration)
+    lock_path = EPISODE_DIRECTORY / f"{experiment_tag}.lock"
+
+    with lock_path.open("a", encoding="utf-8") as lock_file:
+        fcntl.flock(lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+        try:
+            asyncio.run(
+                main(
+                    experiment_name=EXPERIMENT_NAME,
+                    experiment_tag=experiment_tag,
+                    configuration=configuration,
+                )
+            )
+        finally:
+            lock_path.unlink()
+```
 
 ## Experimental Artifacts
 
@@ -152,11 +266,15 @@ Store the outputs of each subepisode in:
 artifact-<subepisode>/
 ```
 
-Artifact structures should remain consistent across subepisodes whenever possible so that analysis code can operate on them uniformly.
+Artifact structures should remain consistent across subepisodes whenever
+possible so that analysis code can operate on them uniformly.
 
-If changes to `__main__.py` require changing the artifact schema or directory structure, migrate existing artifacts in place to the new structure rather than leaving multiple incompatible layouts.
+If changes to `__main__.py` require changing the artifact schema or directory
+structure, migrate existing artifacts in place to the new structure rather than
+leaving multiple incompatible layouts.
 
-Artifacts should contain the information necessary for later analysis without depending on transient runtime state.
+Artifacts should contain the information necessary for later analysis without
+depending on transient runtime state.
 
 ## Figures and Analysis
 
@@ -181,7 +299,8 @@ figure-success-rate.py
 figure-success-rate.pdf
 ```
 
-Figure scripts should consume recorded experiment artifacts rather than rerunning or modifying the underlying experiment.
+Figure scripts should consume recorded experiment artifacts rather than
+rerunning or modifying the underlying experiment.
 
 This separation allows:
 
@@ -203,13 +322,15 @@ It should distinguish clearly between:
 - interpretation,
 - limitations.
 
-The report should refer to the corresponding configurations, artifacts, and figures so that claims can be traced back to their experimental source.
+The report should refer to the corresponding configurations, artifacts, and
+figures so that claims can be traced back to their experimental source.
 
 ## Reproducibility
 
 Reproducibility takes precedence over convenience.
 
-Any input that can materially affect an experiment must be visible and controlled.
+Any input that can materially affect an experiment must be visible and
+controlled.
 
 Where applicable:
 
@@ -224,7 +345,9 @@ Where applicable:
 
 Do not introduce hidden sources of experimental variability.
 
-If perfect determinism is impossible—for example, because an external model API is nondeterministic—the source of nondeterminism should be documented rather than silently ignored.
+If perfect determinism is impossible—for example, because an external model API
+is nondeterministic—the source of nondeterminism should be documented rather
+than silently ignored.
 
 ## Episode Completion
 
@@ -241,4 +364,5 @@ Before considering an episode complete, verify that:
 - figures are reproducible from recorded artifacts,
 - `REPORT.md` documents the results and their interpretation,
 - important sources of nondeterminism are documented,
-- another researcher or LLM agent can reproduce the episode without relying on undocumented assumptions.
+- another researcher or LLM agent can reproduce the episode without relying on
+  undocumented assumptions.
